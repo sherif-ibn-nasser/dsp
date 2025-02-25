@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sounddevice as sd
-from scipy.signal import butter, filtfilt
+from butterworth import butter_bandpass_filter
 
 # Settings
 fs = 44100  # Sampling rate (samples per second)
@@ -12,6 +12,8 @@ print("Recording...")
 audio = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='float64')
 sd.wait()  # Wait for the recording to finish
 print("Recording complete.")
+
+flatten_audio = audio.flatten()
 
 # Time axis for plotting
 t = np.linspace(0, duration, int(duration * fs), endpoint=False)
@@ -25,16 +27,12 @@ half_n = len(frequencies) // 2
 fft_magnitude = np.abs(fft_values[:half_n])
 frequencies = frequencies[:half_n]
 
-# High-pass filter settings
-low_cutoff = 50  # Remove frequencies below 50 Hz
-nyquist = 0.5 * fs  # Nyquist frequency
-normal_cutoff = low_cutoff / nyquist  # Normalize cutoff frequency
+# Band-pass filter settings
+lowcut = 50
+highcut = 20_000
 
 # Butterworth filter
-b, a = butter(4, normal_cutoff, btype='high')
-
-# Apply the filter to the audio signal
-filtered_audio = filtfilt(b, a, audio.flatten())
+filtered_audio = butter_bandpass_filter(flatten_audio, lowcut, highcut, fs, order=5)
 
 # Fourier Transform of filtered audio
 fft_values_filtered = np.fft.fft(filtered_audio)
